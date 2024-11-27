@@ -17,6 +17,7 @@ const db_1 = require("./db");
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const config_1 = require("./config");
 const middleware_1 = require("./middleware");
+const utils_1 = require("./utils");
 const app = (0, express_1.default)();
 app.use(express_1.default.json());
 //@ts-ignore
@@ -119,6 +120,30 @@ app.post("/api/v1/delete/", middleware_1.userMiddleware, (req, res) => __awaiter
         res.json({
             message: "error while deleting content"
         });
+    }
+}));
+app.post("/api/v1/brain/share", middleware_1.userMiddleware, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { share } = req.body;
+    //@ts-ignore
+    const userId = req.userId;
+    try {
+        if (share) {
+            const existingLink = yield db_1.Link.findOne({ userId });
+            if (existingLink) {
+                res.json({ hash: existingLink.hash });
+            }
+            const hash = (0, utils_1.hashGenerator)(10);
+            yield db_1.Link.create({ userId, hash });
+            res.json({ hash });
+        }
+        else {
+            yield db_1.Link.deleteOne({ userId });
+            res.json({ message: "Link removed." });
+        }
+    }
+    catch (error) {
+        console.error("Error sharing link:", error);
+        res.status(500).json({ message: "Error while processing share link." });
     }
 }));
 app.get("/api/v1/brain/:shareLink", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
